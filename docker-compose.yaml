@@ -1,0 +1,24 @@
+services:
+  skyfast:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skyfast
+    network_mode: host
+    ipc: host
+    privileged: true
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./skyfast_ws:/skyfast_ws
+      - ./vins_ws:/vins_ws
+
+  portainer-ce:
+    container_name: portainer-ce
+    image: portainer/portainer-ce:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./volumes/portainer-ce/data:/data

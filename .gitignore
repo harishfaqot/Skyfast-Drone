@@ -1,0 +1,11 @@
+build/
+devel/
+logs/
+*.bag
+*.db
+*.pyc
+__pycache__/
+.vscode/
+.idea/
+Dockerfile.old
+volumes/
