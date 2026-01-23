@@ -35,20 +35,6 @@ This project is intended for research, prototyping, and competition-oriented dev
 
 ---
 
-## Repository Structure
-
-Skyfast-Drone/
-├── src/                # ROS packages and source code
-├── docker/             # Dockerfiles and container setup
-├── scripts/            # Utility and automation scripts
-├── config/             # Configuration files (YAML, params)
-├── launch/             # ROS launch files
-├── docs/               # Documentation and notes
-├── README.md
-└── LICENSE
-
----
-
 ## Requirements
 
 ### Software
@@ -67,15 +53,11 @@ Skyfast-Drone/
 
 ## Setup
 
-### Clone Repository
-git clone git@github.com:harishfaqot/Skyfast-Drone.git
-cd Skyfast-Drone
-
 ### ROS Workspace Example
-mkdir -p ~/catkin_ws/src
-ln -s ~/Skyfast-Drone/src ~/catkin_ws/src/skyfast_drone
-cd ~/catkin_ws
-catkin_make
+mkdir -p ~/skyfast_ws/src
+ln -s ~/Skyfast-Drone/src ~/skyfast_ws/src/skyfast_drone
+cd ~/skyfast_ws
+skyfast_make
 source devel/setup.bash
 
 ---
@@ -100,12 +82,6 @@ docker run -it --net=host --privileged skyfast-drone
 - MAVROS integration: in progress
 - Sensor drivers: planned
 - Autonomous mission logic: planned
-
----
-
-## License
-
-MIT License
 
 ---
 
