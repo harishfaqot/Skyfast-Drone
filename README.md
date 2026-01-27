@@ -1,3 +1,4 @@
+## This Repo is On Development
 # Skyfast-Drone
 
 Skyfast-Drone is a robotics and UAV development repository focused on **high-speed autonomous drone systems**, system integration, and experimentation with **ROS-based perception, control, and navigation** pipelines.
@@ -48,17 +49,6 @@ This project is intended for research, prototyping, and competition-oriented dev
 - Companion computer (Jetson / x86 / Raspberry Pi)
 - Camera / LiDAR
 - RC or telemetry link
-
----
-
-## Setup
-
-### ROS Workspace Example
-mkdir -p ~/skyfast_ws/src
-ln -s ~/Skyfast-Drone/src ~/skyfast_ws/src/skyfast_drone
-cd ~/skyfast_ws
-skyfast_make
-source devel/setup.bash
 
 ---
 
