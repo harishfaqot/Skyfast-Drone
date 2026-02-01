@@ -54,13 +54,24 @@ This project is intended for research, prototyping, and competition-oriented dev
 ## Setup
 
 ### ROS Workspace Example
+
+
+### ROS Workspace Example
+
+```bash
 mkdir -p ~/skyfast_ws/src
 ln -s ~/Skyfast-Drone/src ~/skyfast_ws/src/skyfast_drone
 cd ~/skyfast_ws
-skyfast_make
+catkin_make
 source devel/setup.bash
 
 ---
+
+## Docker Support
+
+Docker can be used for:
+- Reproducible builds
+- Isolated ROS environments
 
 ## Docker Support
 
