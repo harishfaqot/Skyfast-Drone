@@ -5,7 +5,7 @@ Skyfast-Drone is a robotics and UAV development repository focused on **high-spe
 
 This project is intended for research, prototyping, and competition-oriented development, emphasizing **modularity, reproducibility, and hardware integration**.
 
----
+--
 
 ## Project Objectives
 
