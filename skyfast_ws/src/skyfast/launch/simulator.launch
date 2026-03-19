@@ -1,0 +1,7 @@
+<launch>
+  <include file="$(find ego_planner)/launch/run_in_sim.launch"/>
+
+  <!-- Foxglove bridge (must edit foxglove_bridge.launch if you want respawn) -->
+  <include file="$(find foxglove_bridge)/launch/foxglove_bridge.launch"/>
+  
+</launch>

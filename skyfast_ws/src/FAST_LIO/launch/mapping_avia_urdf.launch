@@ -1,0 +1,58 @@
+<launch>
+
+  <arg name="rviz" default="true" />
+
+  <!-- ============================= -->
+  <!-- Load FAST-LIO parameters -->
+  <!-- ============================= -->
+  <rosparam command="load" file="$(find fast_lio)/config/avia.yaml" />
+
+  <param name="feature_extract_enable" value="0"/>
+  <param name="point_filter_num" value="3"/>
+  <param name="max_iteration" value="3"/>
+  <param name="filter_size_surf" value="0.5"/>
+  <param name="filter_size_map" value="0.5"/>
+  <param name="cube_side_length" value="1000"/>
+  <param name="runtime_pos_log_enable" value="0"/>
+
+  <!-- ============================= -->
+  <!-- Load URDF -->
+  <!-- ============================= -->
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find skyline)/urdf/robot.urdf'" />
+
+  <!-- ============================= -->
+  <!-- Publish robot TF -->
+  <!-- ============================= -->
+  <node pkg="robot_state_publisher"
+        type="robot_state_publisher"
+        name="robot_state_publisher" />
+
+  <node pkg="skyline"
+      type="urdf_publisher.py"
+      name="urdf_publisher"
+      output="screen">
+      <param name="urdf_file"
+         value="$(find skyline)/urdf/robot.urdf"/>
+      </node>
+
+
+  <!-- ============================= -->
+  <!-- FAST-LIO -->
+  <!-- ============================= -->
+  <node pkg="fast_lio"
+        type="fastlio_mapping"
+        name="laserMapping"
+        output="screen" />
+
+  <!-- ============================= -->
+  <!-- RViz -->
+  <!-- ============================= -->
+  <group if="$(arg rviz)">
+    <node pkg="rviz"
+          type="rviz"
+          name="rviz"
+          args="-d $(find fast_lio)/rviz_cfg/loam_livox.rviz" />
+  </group>
+
+</launch>

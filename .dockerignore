@@ -1,0 +1,32 @@
+# Git and editor metadata
+.git
+.gitmodules
+.vscode
+.idea
+
+# Python / ROS transient files
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+
+# Catkin / build outputs
+**/build/
+**/devel/
+**/install/
+**/log/
+
+# ROS bag and large capture artifacts
+**/*.bag
+**/*.bag.active
+**/*.db3
+**/*.mcap
+**/*.pcd
+**/*.lvx
+
+# Local data mounts and archives
+mnt/
+data/
+rosbag*/
+*.zip
+*.tar
+*.tar.gz

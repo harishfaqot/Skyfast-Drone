@@ -46,8 +46,8 @@
   </group>
 
   <!-- FastLIO → MAVROS bridge -->
-  <node pkg="skyline" type="fastlio_bridge.py" name="fastlio_bridge" output="screen" respawn="true" />
-  <node pkg="skyline" type="pcd_recorder.py" name="pcd_recorder" output="screen" respawn="true" />
+  <node pkg="skyfast" type="fastlio_bridge.py" name="fastlio_bridge" output="screen" respawn="true" />
+  <node pkg="skyfast" type="pcd_recorder.py" name="pcd_recorder" output="screen" respawn="true" />
 
   <!-- MAVROS -->
   <include file="$(find mavros)/launch/apm.launch">

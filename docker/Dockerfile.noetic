@@ -1,0 +1,36 @@
+FROM ros:noetic-ros-base-focal
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    git \
+    python3-pip \
+    python3-catkin-tools \
+    ros-noetic-mavros \
+    ros-noetic-mavros-extras \
+    ros-noetic-tf2-geometry-msgs \
+    ros-noetic-foxglove-bridge \
+    ros-noetic-geographic-msgs \
+    ros-noetic-pcl-ros \
+    ros-noetic-laser-geometry \
+    ros-noetic-cv-bridge \
+    ros-noetic-rviz \
+    libopencv-dev \
+    libarmadillo-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . /root/Skyfast-Drone
+
+RUN /bin/bash -lc "cd /root/Skyfast-Drone/Livox-SDK2 && mkdir -p build && cd build && cmake .. && make -j$(nproc) && make install"
+RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && sed -i 's/\r$//' /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && chmod +x /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && bash /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh ROS1"
+RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && source /root/Skyfast-Drone/ws_livox/devel/setup.bash && cd /root/Skyfast-Drone/skyfast_ws && catkin_make"
+
+RUN echo 'source /root/Skyfast-Drone/docker/ros_setup.sh' >> /root/.bashrc
+
+# MAVROS geoid data
+RUN geographiclib-get-geoids egm96-5
+
+WORKDIR /root/Skyfast-Drone
+CMD ["bash"]

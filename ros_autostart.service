@@ -1,0 +1,17 @@
+[Unit]
+Description=ROS Auto Start
+After=network.target
+
+[Service]
+Environment=DISPLAY=:0
+Environment=HOME=/home/jetson
+User=jetson
+WorkingDirectory=/home/jetson
+ExecStart=/home/jetson/Skyline-Drone/ros_autostart.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
