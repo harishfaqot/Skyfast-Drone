@@ -41,10 +41,10 @@ def publish_goal(pub, x, y, z, yaw_deg=0.0):
 
 class GoalMover:
     def __init__(self):
-        self.pub = rospy.Publisher("/move_base_simple/goal", PoseStamped, queue_size=1, latch=True)
+        self.pub = rospy.Publisher("/goal", PoseStamped, queue_size=1, latch=True)
         self.odom_tracker = OdomTracker()
-        rospy.Subscriber("/visual_slam/odom", Odometry, self.odom_tracker.callback, queue_size=1)
-        self.reach_tolerance = 2
+        rospy.Subscriber("/lidar_slam/odom", Odometry, self.odom_tracker.callback, queue_size=1)
+        self.reach_tolerance = 0.2
         self.reach_timeout = 60.0
 
     def wait_ready(self):
@@ -127,21 +127,11 @@ def main():
     mover.wait_ready()
 
     while not rospy.is_shutdown():
-        mover.move(6.0, -5.0, 1.1, 180)
-
-        mover.move(-6.0, -6.0, 1.1, 180.0)
-        mover.move(-8.0, -5.0, 1.1, 135.0)
-
-        mover.move(-5.5, 4.0, 1.1, 0.0)
-        mover.move(-3.5, 4.0, 1.1, 0.0)
-
-        mover.move(13.5, 4.0, 1.1, 0.0)
-        mover.move(15.5, 3.0, 1.1, -45.0)
-
-        mover.move(13.0, -5.0, 1.1, 180.0)
-        mover.move(11.0, -5.0, 1.1, 180.0)
-
-        mover.move(8.5, -5.0, 1.1, 180.0)
+        mover.move(0.0, 0.0, 1.0, 90)
+        mover.move(2.0, 0.0, 1.0, 90)
+        mover.move(2.0, 2.0, 1.0, 90)
+        mover.move(0.0, 2.0, 1.0, 90)
+        mover.move(0.0, 0.0, 1.0, 90)
 
         if not loop:
             break

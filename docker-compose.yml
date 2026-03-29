@@ -7,7 +7,7 @@ services:
       dockerfile: docker/Dockerfile.noetic
     image: skyfast-ipc:noetic
     container_name: skyfast-ipc
-    # network_mode: host
+    network_mode: host
     ports:
       - "8765:8765"
       - "11311:11311"
