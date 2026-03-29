@@ -1,36 +1,43 @@
 FROM ros:noetic-ros-base-focal
 
+SHELL ["/bin/bash", "-lc"]
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     cmake \
-    git \
-    python3-pip \
-    python3-catkin-tools \
+    wget \
+    iputils-ping \
+    net-tools \
+    libtbb-dev \
+    libdw-dev \
+    libeigen3-dev \
+    libpcl-dev \
+    ros-noetic-rosfmt \
+    ros-noetic-eigen-conversions \
     ros-noetic-mavros \
-    ros-noetic-mavros-extras \
-    ros-noetic-tf2-geometry-msgs \
-    ros-noetic-foxglove-bridge \
-    ros-noetic-geographic-msgs \
     ros-noetic-pcl-ros \
-    ros-noetic-laser-geometry \
-    ros-noetic-cv-bridge \
-    ros-noetic-rviz \
-    libopencv-dev \
-    libarmadillo-dev \
+    ros-noetic-foxglove-bridge \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /root/Skyfast-Drone
+COPY . /root/autonomous-lidar-drone
 
-RUN /bin/bash -lc "cd /root/Skyfast-Drone/Livox-SDK2 && mkdir -p build && cd build && cmake .. && make -j$(nproc) && make install"
-RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && sed -i 's/\r$//' /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && chmod +x /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && bash /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh ROS1"
-RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && source /root/Skyfast-Drone/ws_livox/devel/setup.bash && cd /root/Skyfast-Drone/skyfast_ws && catkin_make"
+RUN cd /root/autonomous-lidar-drone/third_party/osqp \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make install \
+    && cd /root/autonomous-lidar-drone/third_party/osqp-eigen \
+    && mkdir build \
+    && cd build \
+    && cmake .. \
+    && make install \
+    && wget -q https://raw.githubusercontent.com/bombela/backward-cpp/master/backward.hpp -O /usr/include/backward.hpp
 
-RUN echo 'source /root/Skyfast-Drone/docker/ros_setup.sh' >> /root/.bashrc
+RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && cd /root/autonomous-lidar-drone/skyfast_ws && catkin_make --only-pkg-with-deps ipc"
 
-# MAVROS geoid data
-RUN geographiclib-get-geoids egm96-5
+RUN echo 'source /root/autonomous-lidar-drone/docker/ros_setup.sh' >> /root/.bashrc
 
-WORKDIR /root/Skyfast-Drone
+WORKDIR /root/autonomous-lidar-drone
 CMD ["bash"]

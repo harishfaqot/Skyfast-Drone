@@ -1,10 +1,12 @@
+version: "3.8"
+
 services:
-  skyfast:
+  skyfast-ipc:
     build:
       context: .
       dockerfile: docker/Dockerfile.noetic
-    image: skyfast-drone:noetic
-    container_name: skyfast-drone
+    image: skyfast-ipc:noetic
+    container_name: skyfast-ipc
     ports:
       - "8765:8765"
       - "11311:11311"
@@ -13,12 +15,20 @@ services:
     tty: true
     restart: unless-stopped
     environment:
-      - ROS_MASTER_URI=http://localhost:11311
+      - ROS_MASTER_URI=http://192.168.18.89:11311
+      - ROS_IP=172.24.0.2
     volumes:
-      - ./skyfast_ws/src:/root/Skyfast-Drone/skyfast_ws/src
-      - ./ws_livox/src:/root/Skyfast-Drone/ws_livox/src
-      - ./samples:/root/Skyfast-Drone/samples
-    # command: ["bash", "-lc", "source /root/Skyfast-Drone/docker/ros_setup.sh && roslaunch skyfast slam.launch"]
+      - ./skyfast_ws/src:/root/autonomous-lidar-drone/skyfast_ws/src
+      - ./ws_livox/src:/root/autonomous-lidar-drone/ws_livox/src
+      - ./samples:/root/autonomous-lidar-drone/samples
 
 volumes:
   skyfast_data:
+
+networks:
+  skyfast_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+

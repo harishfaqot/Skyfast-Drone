@@ -1,0 +1,19 @@
+mkdir -p /home/ubuntu/IPC/IPC_ws/src && cd /home/ubuntu/IPC/IPC_ws/src && git clone https://github.com/hku-mars/IPC.git
+
+sudo apt-get update && sudo apt-get install -y ros-noetic-rosfmt
+
+mkdir -p /home/ubuntu/IPC/third_party && cd /home/ubuntu/IPC/third_party && git clone --recursive https://github.com/osqp/osqp && cd osqp && mkdir -p build && cd build && cmake .. && sudo make install
+
+git checkout v0.6.2 && rm -rf build && mkdir build && cd build && cmake .. && sudo make install
+
+cd /home/ubuntu/IPC/third_party/osqp && git submodule update --init --recursive
+
+cd /home/ubuntu/IPC/third_party/osqp/build && cmake .. && sudo make install
+
+cd /home/ubuntu/IPC/third_party && git clone https://github.com/robotology/osqp-eigen.git && cd osqp-eigen && mkdir -p build && cd build && cmake .. && sudo make install
+
+sudo apt-get install -y libdw-dev && wget -q https://raw.githubusercontent.com/bombela/backward-cpp/master/backward.hpp -O /tmp/backward.hpp && sudo mv /tmp/backward.hpp /usr/include/backward.hpp
+
+
+export ROS_MASTER_URI=http://192.168.18.89:11311
+export ROS_IP=192.168.18.89
