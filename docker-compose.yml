@@ -7,7 +7,7 @@ services:
       dockerfile: docker/Dockerfile.noetic
     image: skyfast-ipc:noetic
     container_name: skyfast-ipc
-    network_mode: host
+    # network_mode: host
     ports:
       - "8765:8765"
       - "11311:11311"
@@ -16,7 +16,7 @@ services:
     tty: true
     restart: unless-stopped
     environment:
-      - ROS_MASTER_URI=http://192.168.18.89:11311
+      - ROS_MASTER_URI=http://localhost:11311
       # - ROS_IP=172.24.0.2
     volumes:
       - ./skyfast_ws/src:/root/Skyfast-Drone/skyfast_ws/src

@@ -26,5 +26,5 @@ if __name__ == "__main__":
     # Subscriber to FastLIO odometry (adjust topic if different!)
     rospy.Subscriber("/Odometry", Odometry, odom_cb)
 
-    rospy.loginfo("FastLIO → MAVROS bridge started")
+    rospy.loginfo("Node fastlio bridge started")
     rospy.spin()

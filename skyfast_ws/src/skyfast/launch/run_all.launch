@@ -1,0 +1,23 @@
+<launch>
+  <!-- Livox-ROS-Driver -->
+  <include file="$(find livox_ros_driver2)/launch_ROS1/msg_MID360.launch"/>
+
+  <!-- Fast-LIO -->
+  <include file="$(find fast_lio)/launch/mapping_mid360.launch"/>
+
+  <!-- FastLIO → MAVROS bridge -->
+  <node pkg="skyfast" type="fastlio_bridge.py" name="fastlio_bridge" output="screen" respawn="true" />
+  <!-- <node pkg="skyfast" type="pcd_recorder.py" name="pcd_recorder" output="screen" respawn="true" /> -->
+
+  <!-- MAVROS -->
+  <!-- <include file="$(find mavros)/launch/apm.launch"> -->
+    <!-- <arg name="fcu_url" value="/dev/ttyACM0:115200"/> -->
+    <!-- <arg name="gcs_url" value="udp://@10.42.0.31:14550"/> -->
+    <!-- <arg name="gcs_url" value="udp://@10.198.2.25:14550"/> -->
+    <!-- <arg name="respawn_mavros" value="true"/> -->
+  <!-- </include> -->
+
+  <!-- Foxglove bridge (must edit foxglove_bridge.launch if you want respawn) -->
+  <include file="$(find foxglove_bridge)/launch/foxglove_bridge.launch"/>
+  
+</launch>
