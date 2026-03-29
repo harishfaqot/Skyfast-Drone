@@ -1,5 +1,4 @@
 <launch>
-  <!-- Fast-LIO -->
   <rosparam command="load" file="$(find fast_lio)/config/mid360.yaml" />
   <param name="feature_extract_enable" type="bool" value="0"/>
   <param name="point_filter_num" type="int" value="3"/>
@@ -10,7 +9,6 @@
   <param name="runtime_pos_log_enable" type="bool" value="0" />
   <node pkg="fast_lio" type="fastlio_mapping" name="laserMapping" output="screen" respawn="true"/> 
 
-  <!-- Livox Driver -->
   <arg name="lvx_file_path" default="livox_test.lvx"/>
   <arg name="bd_list" default="100000000000000"/>
   <arg name="xfer_format" default="1"/>
@@ -38,31 +36,24 @@
   <param name="enable_imu_bag" type="bool" value="$(arg imu_bag)"/>
 
   <node name="livox_lidar_publisher2" pkg="livox_ros_driver2"
-        type="livox_ros_driver2_node"
-        output="screen" args="$(arg cmdline_arg)" respawn="true"/>
+        type="livox_ros_driver2_node" required="true"
+        args="$(arg cmdline_arg)"/>
 
   <group if="$(arg rosbag_enable)">
     <node pkg="rosbag" type="record" name="record" output="screen" args="-a" respawn="true"/>
   </group>
 
-  <!-- FastLIO → MAVROS bridge -->
-  <node pkg="skyfast" type="fastlio_bridge.py" name="fastlio_bridge" output="screen" respawn="true" />
-  <node pkg="skyfast" type="pcd_recorder.py" name="pcd_recorder" output="screen" respawn="true" />
-
-  <!-- MAVROS -->
-  <include file="$(find mavros)/launch/apm.launch">
-    <arg name="fcu_url" value="/dev/ttyAMA0:57600"/>
-    <arg name="gcs_url" value="udp://@10.42.0.31:14550"/>
-    <!-- <arg name="gcs_url" value="/udp://@10.42.0.112:14550"/> -->
-    <arg name="respawn_mavros" value="true"/>
-  </include>
-
-  <!-- Foxglove bridge (must edit foxglove_bridge.launch if you want respawn) -->
   <include file="$(find foxglove_bridge)/launch/foxglove_bridge.launch">
-    <arg name="send_buffer_limit" value="100000000"/> </include>
+    <arg name="max_update_ms" value="16"/>
+    <arg name="send_buffer_limit" value="10000000"/> <arg name="topic_whitelist"
+       value="[
+         '^/tf$',
+         '^/tf_static$',
+         '^/Odometry$',
+         '^/cloud_registered$'
+       ]"/>
+  </include>  
 
-  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="map_to_camera"
-          args="0 0 0 0 0 0 world camera_init" /> -->
-  
-  q
+  <node pkg="topic_tools" type="relay" name="slam_to_mavros" args="/Odometry /mavros/odometry/out" />
+
 </launch>

@@ -1,13 +1,11 @@
 services:
   skyfast:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile.noetic
-    image: skyfast-drone:noetic
+    image: drone-image:latest
     container_name: skyfast-drone
-    ports:
-      - "8765:8765"
-      - "11311:11311"
+    network_mode: "host"       # <--- 1. TAMBAHKAN BARIS INI
+    # ports:                   # <--- 2. BERIKAN KOMENTAR/HAPUS BAGIAN INI
+    #   - "8765:8765"
+    #   - "11311:11311"
     privileged: true
     stdin_open: true
     tty: true
@@ -16,7 +14,7 @@ services:
       - ROS_MASTER_URI=http://localhost:11311
     volumes:
       - ./skyfast_ws/src:/root/Skyfast-Drone/skyfast_ws/src
-      - ./ws_livox/src:/root/Skyfast-Drone/ws_livox/src
+      # - ./ws_livox/src:/root/Skyfast-Drone/ws_livox/src
       - ./samples:/root/Skyfast-Drone/samples
     # command: ["bash", "-lc", "source /root/Skyfast-Drone/docker/ros_setup.sh && roslaunch skyfast slam.launch"]
 

@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-noetic-geographic-msgs \
     ros-noetic-pcl-ros \
     ros-noetic-laser-geometry \
-    ros-noetic-cv-bridge \
+    ros-noetic-vision-opencv \
     ros-noetic-rviz \
     libopencv-dev \
     libarmadillo-dev \
