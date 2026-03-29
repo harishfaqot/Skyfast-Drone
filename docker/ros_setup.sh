@@ -2,10 +2,10 @@
 
 source /opt/ros/noetic/setup.bash
 
-if [ -f /root/autonomous-lidar-drone/ws_livox/devel/setup.bash ]; then
-  source /root/autonomous-lidar-drone/ws_livox/devel/setup.bash
+if [ -f /root/Skyfast-Drone/ws_livox/devel/setup.bash ]; then
+  source /root/Skyfast-Drone/ws_livox/devel/setup.bash
 fi
 
-if [ -f /root/autonomous-lidar-drone/skyfast_ws/devel/setup.bash ]; then
-  source /root/autonomous-lidar-drone/skyfast_ws/devel/setup.bash
+if [ -f /root/Skyfast-Drone/skyfast_ws/devel/setup.bash ]; then
+  source /root/Skyfast-Drone/skyfast_ws/devel/setup.bash
 fi

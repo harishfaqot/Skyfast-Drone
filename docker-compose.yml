@@ -16,19 +16,12 @@ services:
     restart: unless-stopped
     environment:
       - ROS_MASTER_URI=http://192.168.18.89:11311
-      - ROS_IP=172.24.0.2
+      # - ROS_IP=172.24.0.2
     volumes:
-      - ./skyfast_ws/src:/root/autonomous-lidar-drone/skyfast_ws/src
-      - ./ws_livox/src:/root/autonomous-lidar-drone/ws_livox/src
-      - ./samples:/root/autonomous-lidar-drone/samples
+      - ./skyfast_ws/src:/root/Skyfast-Drone/skyfast_ws/src
+      - ./ws_livox/src:/root/Skyfast-Drone/ws_livox/src
+      - ./samples:/root/Skyfast-Drone/samples
 
 volumes:
   skyfast_data:
-
-networks:
-  skyfast_net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
 
