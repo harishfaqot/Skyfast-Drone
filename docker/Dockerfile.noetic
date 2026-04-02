@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     iputils-ping \
     net-tools \
-    libtbb-dev \
+    libtbb-dev \ 
     libdw-dev \
     libeigen3-dev \
     libpcl-dev \
