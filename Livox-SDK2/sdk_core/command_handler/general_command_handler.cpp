@@ -40,6 +40,12 @@
 
 namespace livox {
 namespace lidar {
+
+namespace {
+inline uint8_t NormalizeDevType(uint8_t dev_type) {
+  return (dev_type == 35) ? kLivoxLidarTypeMid360 : dev_type;
+}
+}  // namespace
   
 GeneralCommandHandler::GeneralCommandHandler()
     : device_manager_(nullptr),
@@ -188,8 +194,10 @@ void GeneralCommandHandler::Handler(const uint8_t dev_type, const uint32_t handl
     cmd_observer_cb_(handle, reinterpret_cast<LivoxLidarCmdPacket*>(buf), cmd_observer_client_data_);
   }
 
-  if (dev_type == kLivoxLidarTypePA && lidar_port == kPaLidarFaultPort) {
-    std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(dev_type);
+  uint8_t normalized_dev_type = NormalizeDevType(dev_type);
+
+  if (normalized_dev_type == kLivoxLidarTypePA && lidar_port == kPaLidarFaultPort) {
+    std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(normalized_dev_type);
     if (cmd_handler == nullptr) {
       LOG_ERROR("GeneralCommandHandler::Handler get cmd handler failed");
       return;
@@ -216,7 +224,7 @@ void GeneralCommandHandler::Handler(const uint8_t dev_type, const uint32_t handl
     return;
   }
 
-  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(dev_type);
+  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(normalized_dev_type);
   if (cmd_handler == nullptr) {
     return;
   }
@@ -268,37 +276,39 @@ bool GeneralCommandHandler::VerifyNetSegment(const DetectionData* detection_data
 }
 
 void GeneralCommandHandler::CreateCommandHandler(const uint8_t dev_type) {
+  const uint8_t normalized_dev_type = NormalizeDevType(dev_type);
+
   if (!is_view_) {
     std::lock_guard<std::mutex> lock(command_handle_mutex_);
-    if (dev_type == kLivoxLidarTypeIndustrialHAP) {      
-      if (!(lidars_command_handler_[dev_type]->Init(custom_lidars_cfg_map_))) {
-        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
+    if (normalized_dev_type == kLivoxLidarTypeIndustrialHAP) {
+      if (!(lidars_command_handler_[normalized_dev_type]->Init(custom_lidars_cfg_map_))) {
+        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", normalized_dev_type);
       }
-    } else if (dev_type == kLivoxLidarTypeMid360) {     
-      if (!(lidars_command_handler_[dev_type]->Init(custom_lidars_cfg_map_))) {
-        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
+    } else if (normalized_dev_type == kLivoxLidarTypeMid360) {
+      if (!(lidars_command_handler_[normalized_dev_type]->Init(custom_lidars_cfg_map_))) {
+        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", normalized_dev_type);
       }
-    } else if (dev_type == kLivoxLidarTypePA) {     
-      if (!(lidars_command_handler_[dev_type]->Init(custom_lidars_cfg_map_))) {
-        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
+    } else if (normalized_dev_type == kLivoxLidarTypePA) {
+      if (!(lidars_command_handler_[normalized_dev_type]->Init(custom_lidars_cfg_map_))) {
+        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", normalized_dev_type);
       }
     }
     return;
   }
 
   std::lock_guard<std::mutex> lock(command_handle_mutex_);
-  if (lidars_command_handler_.find(dev_type) == lidars_command_handler_.end()) {
-    if (dev_type == kLivoxLidarTypeIndustrialHAP) {
+  if (lidars_command_handler_.find(normalized_dev_type) == lidars_command_handler_.end()) {
+    if (normalized_dev_type == kLivoxLidarTypeIndustrialHAP) {
       std::shared_ptr<HapCommandHandler> hap_command_handler_ptr(new HapCommandHandler(device_manager_));
-      lidars_command_handler_[dev_type] = hap_command_handler_ptr;        
-      if (!(lidars_command_handler_[dev_type]->Init(is_view_))) {
-        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
+      lidars_command_handler_[normalized_dev_type] = hap_command_handler_ptr;
+      if (!(lidars_command_handler_[normalized_dev_type]->Init(is_view_))) {
+        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", normalized_dev_type);
       }
-    } else if (dev_type == kLivoxLidarTypeMid360) {
+    } else if (normalized_dev_type == kLivoxLidarTypeMid360) {
       std::shared_ptr<Mid360CommandHandler> mid360_command_handler_ptr(new Mid360CommandHandler(device_manager_));
-      lidars_command_handler_[dev_type] = mid360_command_handler_ptr;        
-      if (!(lidars_command_handler_[dev_type]->Init(is_view_))) {
-        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", dev_type);
+      lidars_command_handler_[normalized_dev_type] = mid360_command_handler_ptr;
+      if (!(lidars_command_handler_[normalized_dev_type]->Init(is_view_))) {
+        LOG_ERROR("General command handler init failed, the lidar of type:{} command init failed.", normalized_dev_type);
       }
     }
   }
@@ -316,8 +326,11 @@ void GeneralCommandHandler::HandleDetectionData(uint32_t handle, uint16_t lidar_
     return;
   }
 
-  LOG_INFO("Handle detection data, handle:{}, dev_type:{}, sn:{}, cmd_port:{}",
-      handle, detection_data->dev_type, detection_data->sn, detection_data->cmd_port);
+  const uint8_t raw_dev_type = detection_data->dev_type;
+  const uint8_t normalized_dev_type = NormalizeDevType(raw_dev_type);
+
+  LOG_INFO("Handle detection data, handle:{}, dev_type:{}, normalized_type:{}, sn:{}, cmd_port:{}",
+      handle, raw_dev_type, normalized_dev_type, detection_data->sn, detection_data->cmd_port);
 
   LoggerManager::GetInstance().AddDevice(handle, detection_data);
   DebugPointCloudManager::GetInstance().AddDevice(handle, detection_data);
@@ -326,7 +339,7 @@ void GeneralCommandHandler::HandleDetectionData(uint32_t handle, uint16_t lidar_
     return;
   }
 
-  CreateCommandHandler(detection_data->dev_type);
+  CreateCommandHandler(normalized_dev_type);
 
   std::string lidar_ip = std::to_string(detection_data->lidar_ip[0]) + "." +
       std::to_string(detection_data->lidar_ip[1]) + "." +
@@ -337,7 +350,7 @@ void GeneralCommandHandler::HandleDetectionData(uint32_t handle, uint16_t lidar_
     DeviceInfo& device_info = devices_[handle];
     if (!(device_info.is_update_cfg.load()) && (device_info.is_get_loader_mode.load()) && !(device_info.is_loader_mode.load())) {
       if (!is_view_) {
-        UpdateLidarCfg(detection_data->dev_type, handle, detection_data->cmd_port);
+        UpdateLidarCfg(normalized_dev_type, handle, detection_data->cmd_port);
       }
     }
 
@@ -356,19 +369,19 @@ void GeneralCommandHandler::HandleDetectionData(uint32_t handle, uint16_t lidar_
   {
     std::lock_guard<std::mutex> lock(dev_type_mutex_);
     if (device_dev_type_.find(handle) != device_dev_type_.end()) {
-      if (device_dev_type_[handle] != detection_data->dev_type) {
+      if (device_dev_type_[handle] != normalized_dev_type) {
         LOG_ERROR("Lidar dev type conflic, the lidar ip:{}, the dev_type1:{}, the dev_type2:{}",
-            lidar_ip.c_str(), device_dev_type_[handle], detection_data->dev_type);
+            lidar_ip.c_str(), device_dev_type_[handle], normalized_dev_type);
       }
     } else {
-      device_dev_type_[handle] = detection_data->dev_type;
+      device_dev_type_[handle] = normalized_dev_type;
     }
   }
 
   DeviceInfo& device_info = devices_[handle];
   device_info.sn = detection_data->sn;
   device_info.lidar_ip = lidar_ip;
-  device_info.dev_type = detection_data->dev_type;
+  device_info.dev_type = normalized_dev_type;
   device_info.is_get_loader_mode.store(false);
   device_info.is_update_cfg.store(false);
   device_info.is_callback.store(false);
@@ -426,14 +439,6 @@ void GeneralCommandHandler::QueryFwTypeCallback(livox_status status, uint32_t ha
     self->QueryFwType(handle);
     return;
   }
-
-  // if (response->param_num != 1) {
-  //   LOG_ERROR("Query livox lidar Fw type failed, the key_num:{}", response->param_num);
-  //   count += 1;
-  //   GeneralCommandHandler* self = (GeneralCommandHandler*)(client_data);
-  //   self->QueryFwType(handle);
-  //   return;
-  // }
 
   uint16_t off = 0;  
   LivoxLidarKeyValueParam* kv = (LivoxLidarKeyValueParam*)&response->data[off];
@@ -498,14 +503,14 @@ livox_status GeneralCommandHandler::QueryFwType(const uint32_t handle) {
 }
 
 void GeneralCommandHandler::UpdateLidarCfg(const ViewLidarIpInfo& view_lidar_info) {
-  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(view_lidar_info.dev_type);
+  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(NormalizeDevType(view_lidar_info.dev_type));
   if (cmd_handler != nullptr && device_manager_->sdk_framework_cfg_ptr_->master_sdk) {
     cmd_handler->UpdateLidarCfg(view_lidar_info);
   }
 }
 
 void GeneralCommandHandler::UpdateLidarCfg(const uint8_t dev_type, const uint32_t handle, const uint16_t lidar_cmd_port) {
-  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(dev_type);
+  std::shared_ptr<CommandHandler> cmd_handler = GetLidarCommandHandler(NormalizeDevType(dev_type));
   if (cmd_handler != nullptr && device_manager_->sdk_framework_cfg_ptr_->master_sdk) {
     cmd_handler->UpdateLidarCfg(handle, lidar_cmd_port);
   } 
@@ -528,8 +533,7 @@ void GeneralCommandHandler::LivoxLidarInfoChange(const uint32_t handle) {
     device_info.is_callback.store(true);
     strcpy(lidar_info.sn, device_info.sn.c_str());
     strcpy(lidar_info.lidar_ip, device_info.lidar_ip.c_str());
-    lidar_info.dev_type = device_info.dev_type;
-
+    lidar_info.dev_type = NormalizeDevType(device_info.dev_type);
   }
 
   if (device_manager_ && is_view_ && !is_loader_mode) {
@@ -546,7 +550,7 @@ void GeneralCommandHandler::LivoxLidarInfoChange(const uint32_t handle) {
 void GeneralCommandHandler::PushLivoxLidarInfo(const uint32_t handle, const std::string& info) {
   std::lock_guard<std::mutex> lock(dev_type_mutex_);
   if (device_dev_type_.find(handle) != device_dev_type_.end()) {
-    uint8_t dev_type = device_dev_type_[handle];
+    uint8_t dev_type = NormalizeDevType(device_dev_type_[handle]);
     
     if (livox_lidar_info_cb_) {
       livox_lidar_info_cb_(handle, dev_type, info.c_str(), livox_lidar_info_client_data_);
@@ -557,7 +561,7 @@ void GeneralCommandHandler::PushLivoxLidarInfo(const uint32_t handle, const std:
 std::shared_ptr<CommandHandler> GeneralCommandHandler::GetLidarCommandHandler(const uint32_t handle) {
   std::lock_guard<std::mutex> lock(dev_type_mutex_);
   if (device_dev_type_.find(handle) != device_dev_type_.end()) {
-    uint8_t dev_type = device_dev_type_[handle];
+    uint8_t dev_type = NormalizeDevType(device_dev_type_[handle]);
     return GetLidarCommandHandler(dev_type);
   }
   LOG_ERROR("Get command handler failed, get dev type failed, the handle:{}", handle);
@@ -565,9 +569,10 @@ std::shared_ptr<CommandHandler> GeneralCommandHandler::GetLidarCommandHandler(co
 }
 
 std::shared_ptr<CommandHandler> GeneralCommandHandler::GetLidarCommandHandler(const uint8_t dev_type) {
+  const uint8_t normalized_dev_type = NormalizeDevType(dev_type);
   std::lock_guard<std::mutex> lock(command_handle_mutex_);
-  if (lidars_command_handler_.find(dev_type) != lidars_command_handler_.end()) {
-    return lidars_command_handler_[dev_type];
+  if (lidars_command_handler_.find(normalized_dev_type) != lidars_command_handler_.end()) {
+    return lidars_command_handler_[normalized_dev_type];
   }
   return nullptr;
 }
@@ -575,7 +580,7 @@ std::shared_ptr<CommandHandler> GeneralCommandHandler::GetLidarCommandHandler(co
 bool GeneralCommandHandler::GetQueryLidarInternalInfoKeys(const uint32_t handle, std::set<ParamKeyName>& key_sets) {
   std::lock_guard<std::mutex> lock(dev_type_mutex_);
   if (device_dev_type_.find(handle) != device_dev_type_.end()) {
-    uint8_t dev_type = device_dev_type_[handle];
+    uint8_t dev_type = NormalizeDevType(device_dev_type_[handle]);
     if (dev_type == kLivoxLidarTypeIndustrialHAP) {
       std::set<ParamKeyName> tmp_key_sets {
         kKeyPclDataType,
@@ -715,7 +720,6 @@ livox_status GeneralCommandHandler::SendLoggerCommand(uint32_t handle,
   return kLivoxLidarStatusSuccess;
 }
 
-
 void GeneralCommandHandler::AddCommand(const Command& command) {
   if (command.packet.cmd_type == kCommandTypeAck) {
     return;
@@ -757,4 +761,3 @@ void GeneralCommandHandler::CommandsHandle(TimePoint now) {
 
 }  // namespace livox
 } // namespace lidar
-

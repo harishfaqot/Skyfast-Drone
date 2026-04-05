@@ -43,6 +43,12 @@
 namespace livox {
 namespace lidar {
 
+namespace {
+inline uint8_t NormalizeDevType(uint8_t dev_type) {
+  return (dev_type == 35) ? kLivoxLidarTypeMid360 : dev_type;
+}
+}  // namespace
+
 DeviceManager::DeviceManager()
     : sdk_framework_cfg_ptr_(nullptr),
       lidars_cfg_ptr_(nullptr),
@@ -181,12 +187,14 @@ bool DeviceManager::Init(std::shared_ptr<std::vector<LivoxLidarCfg>>& lidars_cfg
 
 void DeviceManager::GetLidarConfigMap() {
   for (auto it = lidars_cfg_ptr_->begin(); it != lidars_cfg_ptr_->end(); ++it) {
-    const LivoxLidarCfg& lidar_cfg = *it;
+    LivoxLidarCfg lidar_cfg = *it;
+    lidar_cfg.device_type = NormalizeDevType(lidar_cfg.device_type);
     type_lidars_cfg_map_[lidar_cfg.device_type] = lidar_cfg;
   }
 
   for (auto it = custom_lidars_cfg_ptr_->begin(); it != custom_lidars_cfg_ptr_->end(); ++it) {
-    const LivoxLidarCfg& lidar_cfg = *it;
+    LivoxLidarCfg lidar_cfg = *it;
+    lidar_cfg.device_type = NormalizeDevType(lidar_cfg.device_type);
     uint32_t lidar_ip = inet_addr(lidar_cfg.lidar_net_info.lidar_ipaddr.c_str());
     custom_lidars_cfg_map_[lidar_ip] = lidar_cfg;
   }
@@ -250,7 +258,7 @@ bool DeviceManager::CreateChannel() {
       return false;
     }
 
-    if (!CreateCommandChannel(it->device_type, host_net_info)) {
+    if (!CreateCommandChannel(NormalizeDevType(it->device_type), host_net_info)) {
       LOG_ERROR("Create command channel failed.");
       return false;
     }
@@ -303,7 +311,9 @@ bool DeviceManager::CreateDataChannel(const HostNetInfo& host_net_info) {
   return true;
 }
 
-bool DeviceManager::CreateCommandChannel(const uint8_t dev_type, const HostNetInfo& host_net_info) {
+bool DeviceManager::CreateCommandChannel(const uint8_t dev_type_in, const HostNetInfo& host_net_info) {
+  const uint8_t dev_type = NormalizeDevType(dev_type_in);
+
   if (sdk_framework_cfg_ptr_->master_sdk) {
     if (!CreateCmdSocketAndAddDelegate(dev_type, host_net_info.host_ip, host_net_info.cmd_data_port, kCmd)) {
       LOG_ERROR("Create socket and add delegate failed.");
@@ -317,7 +327,6 @@ bool DeviceManager::CreateCommandChannel(const uint8_t dev_type, const HostNetIn
   }
 
   if (dev_type == kLivoxLidarTypePA) {
-    //if (!CreateCmdSocketAndAddDelegate(dev_type, host_net_info.push_msg_ip, kPaHostFaultPort, is_custom)) {
     if (!CreateCmdSocketAndAddDelegate(dev_type, host_net_info.host_ip, kPaHostFaultPort, kFault)) {
       LOG_ERROR("Create socket and add delegate failed.");
       return false;
@@ -491,10 +500,11 @@ void DeviceManager::OnData(socket_t sock, void *client_data) {
     }
 
     if (view_lidar_info_ptr != nullptr) {
+      const uint8_t dev_type = NormalizeDevType(view_lidar_info_ptr->dev_type);
       if (port == view_lidar_info_ptr->lidar_point_port || port == view_lidar_info_ptr->lidar_imu_data_port) {
-        DataHandler::GetInstance().Handle(view_lidar_info_ptr->dev_type, handle, (uint8_t*)(buf.get()), size);
+        DataHandler::GetInstance().Handle(dev_type, handle, (uint8_t*)(buf.get()), size);
       } else {
-        GeneralCommandHandler::GetInstance().Handler(view_lidar_info_ptr->dev_type, handle, port, (uint8_t*)(buf.get()), size);
+        GeneralCommandHandler::GetInstance().Handler(dev_type, handle, port, (uint8_t*)(buf.get()), size);
       }
     } else {
       GeneralCommandHandler::GetInstance().Handler(handle, port, (uint8_t*)(buf.get()), size);
@@ -504,19 +514,19 @@ void DeviceManager::OnData(socket_t sock, void *client_data) {
 
   if (custom_lidars_cfg_map_.find(handle) != custom_lidars_cfg_map_.end()) {
     const LivoxLidarCfg& lidar_cfg = custom_lidars_cfg_map_[handle];
+    const uint8_t dev_type = NormalizeDevType(lidar_cfg.device_type);
     if (port == lidar_cfg.lidar_net_info.imu_data_port || port == lidar_cfg.lidar_net_info.point_data_port) {
-      DataHandler::GetInstance().Handle(lidar_cfg.device_type, handle, (uint8_t*)(buf.get()), size);
+      DataHandler::GetInstance().Handle(dev_type, handle, (uint8_t*)(buf.get()), size);
       return;
     }
     if (port == kDetectionPort || port == lidar_cfg.lidar_net_info.cmd_data_port || port == lidar_cfg.lidar_net_info.push_msg_port ||
         port == lidar_cfg.lidar_net_info.log_data_port || port == kPaLidarFaultPort) {
-      GeneralCommandHandler::GetInstance().Handler(lidar_cfg.device_type, handle, port, (uint8_t*)(buf.get()), size);
+      GeneralCommandHandler::GetInstance().Handler(dev_type, handle, port, (uint8_t*)(buf.get()), size);
       return;
     }
     return;
   }
 
-  // parse the device type info from config_ptr and add to custom_lidars_cfg_map_
   if (port != kDetectionPort) {
     return;
   }
@@ -538,18 +548,22 @@ void DeviceManager::OnData(socket_t sock, void *client_data) {
     return;
   }
 
-  if (type_lidars_cfg_map_.find(detection_data->dev_type) == type_lidars_cfg_map_.end()) {
+  const uint8_t normalized_dev_type = NormalizeDevType(detection_data->dev_type);
+
+  if (type_lidars_cfg_map_.find(normalized_dev_type) == type_lidars_cfg_map_.end()) {
     return;
   }
 
-  LivoxLidarCfg& lidar_cfg = type_lidars_cfg_map_[detection_data->dev_type];
+  LivoxLidarCfg lidar_cfg = type_lidars_cfg_map_[normalized_dev_type];
+  lidar_cfg.device_type = normalized_dev_type;
+
   struct in_addr binary_ip;
   binary_ip.s_addr = handle;
   lidar_cfg.lidar_net_info.lidar_ipaddr = inet_ntoa(binary_ip);
   custom_lidars_cfg_map_[handle] = lidar_cfg;
   custom_lidars_cfg_ptr_->push_back(lidar_cfg);
   GeneralCommandHandler::GetInstance().Init(custom_lidars_cfg_ptr_, this);
-  GeneralCommandHandler::GetInstance().CreateCommandHandler(detection_data->dev_type);
+  GeneralCommandHandler::GetInstance().CreateCommandHandler(normalized_dev_type);
 
   for (auto it = custom_lidars_cfg_ptr_->begin(); it != custom_lidars_cfg_ptr_->end(); ++it) {
     const HostNetInfo& host_net_info = it->host_net_info;
@@ -558,7 +572,7 @@ void DeviceManager::OnData(socket_t sock, void *client_data) {
       return;
     }
 
-    if (!CreateCommandChannel(it->device_type, host_net_info)) {
+    if (!CreateCommandChannel(NormalizeDevType(it->device_type), host_net_info)) {
       LOG_ERROR("Create command channel failed.");
       return;
     }
@@ -571,13 +585,15 @@ void DeviceManager::HandleDetectionData(uint32_t handle, DetectionData* detectio
     return;
   }
 
+  const uint8_t normalized_dev_type = NormalizeDevType(detection_data->dev_type);
+
   if (is_view_) {
     {
       std::lock_guard<std::mutex> lock(view_device_mutex_);
       if (view_devices_.find(handle) == view_devices_.end()) {
         ViewDevice& view_device = view_devices_[handle];
         view_device.handle = handle;
-        view_device.dev_type = detection_data->dev_type;
+        view_device.dev_type = normalized_dev_type;
         view_device.cmd_port = detection_data->cmd_port;
         view_device.is_get.store(false);
         view_device.is_set.store(false);
@@ -611,9 +627,9 @@ void DeviceManager::HandleDetectionData(uint32_t handle, DetectionData* detectio
   std::lock_guard<std::mutex> lock(lidars_dev_type_mutex_);
   if (lidars_dev_type_.find(handle) != lidars_dev_type_.end()) {
     uint16_t dev_type = lidars_dev_type_[handle];
-    if (dev_type != detection_data->dev_type) {
+    if (dev_type != normalized_dev_type) {
       LOG_ERROR("The lidar of handle:{} dev_type is error, the dev_type1:{}, the dev_type2:{}",
-          handle, dev_type, detection_data->dev_type);
+          handle, dev_type, normalized_dev_type);
       return;
     }
     if (is_get_loader_mode && is_load_mode) {
@@ -621,7 +637,7 @@ void DeviceManager::HandleDetectionData(uint32_t handle, DetectionData* detectio
     }
     return;
   }
-  lidars_dev_type_[handle] = detection_data->dev_type;
+  lidars_dev_type_[handle] = normalized_dev_type;
 
   if (is_get_loader_mode && is_load_mode) {
     GeneralCommandHandler::GetInstance().LivoxLidarInfoChange(handle);
@@ -672,7 +688,7 @@ void DeviceManager::AddViewLidar(const uint32_t handle, LivoxLidarDiagInternalIn
 
   std::shared_ptr<ViewLidarIpInfo> view_lidar_info_ptr(new ViewLidarIpInfo());
   view_lidar_info_ptr->handle = handle;
-  view_lidar_info_ptr->dev_type = view_device.dev_type;
+  view_lidar_info_ptr->dev_type = NormalizeDevType(view_device.dev_type);
   view_lidar_info_ptr->lidar_cmd_port = view_device.cmd_port;
   view_lidar_info_ptr->host_ip = detection_host_ip_;
 
@@ -749,7 +765,7 @@ uint8_t DeviceManager::GetDeviceType(const uint32_t handle) {
   uint8_t dev_type = 0;
   std::lock_guard<std::mutex> lock(lidars_dev_type_mutex_);
   if (lidars_dev_type_.find(handle) != lidars_dev_type_.end()) {
-    dev_type = lidars_dev_type_[handle];
+    dev_type = NormalizeDevType(lidars_dev_type_[handle]);
   }
   return dev_type;
 }
@@ -761,7 +777,7 @@ void DeviceManager::OnTimer(TimePoint now) {
 int DeviceManager::SendCommand(const uint8_t dev_type, const uint32_t handle, const std::vector<uint8_t>& buf, 
     const int16_t size, const struct sockaddr *addr, socklen_t addrlen) {
   socket_t sock = -1;
-  if (!GetCmdChannel(dev_type, handle, sock)) {
+  if (!GetCmdChannel(NormalizeDevType(dev_type), handle, sock)) {
     LOG_WARN("Get cmd channel faileld, the lidar handle: {}", handle);
     sock = detection_socket_;
   }
@@ -770,6 +786,7 @@ int DeviceManager::SendCommand(const uint8_t dev_type, const uint32_t handle, co
 }
 
 bool DeviceManager::GetCmdChannel(const uint8_t dev_type, const uint32_t handle, socket_t& sock) {
+  (void)dev_type;
   if (custom_lidars_cfg_map_.find(handle) != custom_lidars_cfg_map_.end()) {
     const LivoxLidarCfg& lidar_cfg = custom_lidars_cfg_map_[handle];
     std::string key = lidar_cfg.host_net_info.host_ip + ":" + std::to_string(lidar_cfg.host_net_info.cmd_data_port);
@@ -785,7 +802,7 @@ bool DeviceManager::GetCmdChannel(const uint8_t dev_type, const uint32_t handle,
 int DeviceManager::SendLoggerCommand(const uint8_t dev_type, const uint32_t handle, const std::vector<uint8_t>& buf, 
     const int16_t size, const struct sockaddr *addr, socklen_t addrlen) {
   socket_t sock = -1;
-  if (!GetLoggerCmdChannel(dev_type, handle, sock)) {
+  if (!GetLoggerCmdChannel(NormalizeDevType(dev_type), handle, sock)) {
     sock = detection_socket_;
   }
   std::lock_guard<std::mutex> lock(mutex_logger_cmd_channel_);
@@ -793,6 +810,7 @@ int DeviceManager::SendLoggerCommand(const uint8_t dev_type, const uint32_t hand
 }
 
 bool DeviceManager::GetLoggerCmdChannel(const uint8_t dev_type, const uint32_t handle, socket_t& sock) {
+  (void)dev_type;
   if (custom_lidars_cfg_map_.find(handle) != custom_lidars_cfg_map_.end()) {
     const LivoxLidarCfg& lidar_cfg = custom_lidars_cfg_map_[handle];
     std::string key = lidar_cfg.host_net_info.host_ip + ":" + std::to_string(lidar_cfg.host_net_info.log_data_port);
