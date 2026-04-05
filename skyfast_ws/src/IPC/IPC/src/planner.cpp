@@ -454,8 +454,13 @@ void PlannerClass::LocalPcCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     local_astar_->SetCenter(Eigen::Vector3d(odom_p_.x(), odom_p_.y(), 0.0));
     local_astar_->setObsVector(local_pc_, expand_fix_);
     std::vector<Eigen::Vector3d> remain_path;
-    remain_path.insert(remain_path.begin(), follow_path_.begin()+astar_index_, follow_path_.end());
-    if (local_astar_->CheckPathFree(remain_path) == false) replan_flag_ = true;
+    if (!follow_path_.empty()) {
+        int safe_index = astar_index_;
+        if (safe_index < 0) safe_index = 0;
+        if (safe_index >= static_cast<int>(follow_path_.size())) safe_index = follow_path_.size() - 1;
+        remain_path.insert(remain_path.begin(), follow_path_.begin() + safe_index, follow_path_.end());
+    }
+    if (!remain_path.empty() && local_astar_->CheckPathFree(remain_path) == false) replan_flag_ = true;
     // bool flag = local_astar_->CheckPathFree(follow_path_);     // check path is free or not
     // if (flag == false) obs_count++;
     // else obs_count = 0;
@@ -464,14 +469,14 @@ void PlannerClass::LocalPcCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
     //     replan_flag_ = true;
     // }
     
-    // local_astar_->GetOccupyPcl(cloud);
-    // cloud.width = cloud.points.size();
-    // cloud.height = 1;
-    // cloud.is_dense = true;
-    // sensor_msgs::PointCloud2 map_msg;
-    // pcl::toROSMsg(cloud, map_msg);
-    // map_msg.header.frame_id = "world";
-    // gird_map_pub_.publish(map_msg);
+    local_astar_->GetOccupyPcl(cloud);
+    cloud.width = cloud.points.size();
+    cloud.height = 1;
+    cloud.is_dense = false;
+    sensor_msgs::PointCloud2 map_msg;
+    pcl::toROSMsg(cloud, map_msg);
+    map_msg.header.frame_id = "world";
+    gird_map_pub_.publish(map_msg);
 
     log_times_[0] = (ros::Time::now() - now).toSec() * 1000.0;
 

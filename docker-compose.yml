@@ -22,6 +22,7 @@ services:
       - ./skyfast_ws/src:/root/Skyfast-Drone/skyfast_ws/src
       # - ./ws_livox/src:/root/Skyfast-Drone/ws_livox/src
       - ./samples:/root/Skyfast-Drone/samples
+      - ./ws_livox/src/livox_ros_driver2/config:/root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/config
 
 volumes:
   skyfast_data:

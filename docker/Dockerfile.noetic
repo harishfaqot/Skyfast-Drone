@@ -40,7 +40,7 @@ RUN /bin/bash -lc "cd /root/Skyfast-Drone/Livox-SDK2 && mkdir -p build && cd bui
 RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && sed -i 's/\r$//' /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && chmod +x /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh && bash /root/Skyfast-Drone/ws_livox/src/livox_ros_driver2/build.sh ROS1"
 RUN /bin/bash -lc "source /opt/ros/noetic/setup.bash && source /root/Skyfast-Drone/ws_livox/devel/setup.bash && cd /root/Skyfast-Drone/skyfast_ws && catkin_make --only-pkg-with-deps ipc skyfast fast_lio"
 
-RUN echo 'source /root/Skyfast-Drone/docker/ros_setup.sh' >> /root/.bashrc
+RUN echo 'source /root/Skyfast-Drone/docker/ros_setup.s++h' >> /root/.bashrc
 
 # MAVROS geoid data
 RUN geographiclib-get-geoids egm96-5

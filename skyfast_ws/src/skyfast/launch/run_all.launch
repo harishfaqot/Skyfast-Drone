@@ -11,7 +11,7 @@
 
   <!-- MAVROS -->
   <include file="$(find mavros)/launch/apm.launch">
-    <arg name="fcu_url" value="/dev/ttyS0:115200"/>
+    <arg name="fcu_url" value="/dev/ttyAMA0:115200"/>
     <arg name="gcs_url" value="udp://@10.42.0.212:14550"/>
     <!-- <arg name="gcs_url" value="udp://@192.168.18.7:14550"/> -->
     <arg name="respawn_mavros" value="true"/>
